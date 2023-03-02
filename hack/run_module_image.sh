@@ -11,6 +11,7 @@ set -o pipefail # prevents errors in a pipeline from being masked
 
 echo "Downloading module image"
 
+rm -r downloaded_module
 mkdir downloaded_module
 skopeo copy docker://$1 dir:downloaded_module
 
@@ -21,6 +22,8 @@ echo "Extracting $filename"
 
 mkdir chart
 tar -xzf $filename -C chart
+
+kubectl apply -f deployments/prerequisites.yaml
 
 echo "Installing helm chart"
 
