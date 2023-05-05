@@ -1,5 +1,5 @@
 
-name: Promote to channel
+name: Promote to channel (new)
 
 env:
   BOT_ORG: kyma-btp-manager-bot
