@@ -1,0 +1,69 @@
+# Call this workflow from other jobs to execute unit tests in the current context
+
+name: Run stress tests on the cluster (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      image-repo:
+        description: Binary image registry reference
+        required: true
+        type: string
+      module-repo:
+        description: OCI module image registry reference
+        required: true
+        type: string
+      module-tag:
+        description: OCI module image tag
+        required: true
+        type: string
+      image-tag:
+        description: Binary image tag
+        required: true
+        type: string
+
+jobs:
+  run-stress-tests:
+      name: Stress tests
+      runs-on: ubuntu-latest
+
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v3
+
+        - name: Prepare k3s cluster and docker registry
+          run: "./scripts/testing/k3s-setup.sh --wait"
+
+        - name: Wait for artifacts
+          env:
+            BTP_OPERATOR_REPO: ${{ inputs.module-repo }}
+            BTP_MANAGER_REPO: ${{ inputs.image-repo }}
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          run: "./scripts/await_artifacts.sh ${{ inputs.image-tag }} ${{ inputs.module-tag }} ${{ inputs.skip-templates }}"
+
+        - name: Install BTP operator
+          timeout-minutes: 2
+          run: "./scripts/testing/install.sh ${{ inputs.module-repo }}:${{ inputs.module-tag }} dummy ci"
+
+        - name: BTP Manager controller resources usage
+          run: "kubectl top pod -l app.kubernetes.io/component=btp-manager.kyma-project.io -n kyma-system --containers"
+
+        - name: Run tests
+          run: ./scripts/testing/./stress-mem.sh 500 30
+
+        - name: Check BTP manager restarts
+          run: "./scripts/testing/check_btp-manager_restarts.sh"
+
+        - name: BTP Manager controller resources usage
+          run: "kubectl top pod -l app.kubernetes.io/component=btp-manager.kyma-project.io -n kyma-system --containers"
+
+        - name: Prepare stress data - Secrets and ConfigMaps
+          run: "./scripts/testing/create-secrets-configmaps.sh 120"
+
+        - name: BTP Manager controller resources usage
+          run: "kubectl top pod -l app.kubernetes.io/component=btp-manager.kyma-project.io -n kyma-system --containers"
+
+        - name: Check BTP manager restarts
+          run: |
+            sleep 15
+            ./scripts/testing/check_btp-manager_restarts.sh
