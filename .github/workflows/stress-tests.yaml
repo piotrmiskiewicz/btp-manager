@@ -2,6 +2,11 @@ name: "Run stress tests"
 
 on:
   workflow_dispatch:
+    inputs:
+      pr-number:
+        description: 'PR number'
+        default: ""
+        required: true
 
 jobs:
   run-stress-tests:
@@ -9,7 +14,7 @@ jobs:
     uses: "./.github/workflows/run-stress-tests-reusable.yaml"
     secrets: inherit
     with:
-      image-tag: PR-${{ github.event.number }}
-      module-tag: v0.0.0-PR-${{ github.event.number }}
+      image-tag: PR-${{ github.event.inputs.pr-number }}
+      module-tag: v0.0.0-PR-${{ github.event.inputs.pr-number }}
       image-repo: europe-docker.pkg.dev/kyma-project/dev/btp-manager
       module-repo: europe-docker.pkg.dev/kyma-project/dev/unsigned/component-descriptors/kyma.project.io/module/btp-operator
