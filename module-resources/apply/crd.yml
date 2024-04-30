@@ -103,9 +103,16 @@ spec:
                 secretRootKey:
                   description: SecretRootKey is used as the key inside the secret to store all binding data including credentials returned by the broker and additional info under single key. Convenient way to store whole binding data in single file when using `volumeMounts`.
                   type: string
+                secretTemplate:
+                  description: 'SecretTemplate is a Go template that generates a custom Kubernetes v1/Secret based on data from the service binding returned by Service Manager and the instance information. The generated secret is used instead of the default secret. This is useful if the consumer of service binding data expects them in a specific format. For Go templates see https://pkg.go.dev/text/template. For supported funcs see: https://pkg.go.dev/text/template#hdr-Functions, https://masterminds.github.io/sprig/'
+                  type: string
+                  x-kubernetes-preserve-unknown-fields: true
                 serviceInstanceName:
                   description: The k8s name of the service instance to bind, should be in the namespace of the binding
                   minLength: 1
+                  type: string
+                serviceInstanceNamespace:
+                  description: The namespace of the referenced instance, if empty Binding's namespace will be used
                   type: string
                 userInfo:
                   description: UserInfo contains information about the user that last modified this instance. This field is set by the API server and not settable by the end-user. User-provided values for this field are not saved.
@@ -202,6 +209,9 @@ spec:
                   type: string
                 ready:
                   description: Indicates whether binding is ready for usage
+                  type: string
+                subaccountID:
+                  description: The subaccount id of the service binding
                   type: string
               required:
                 - conditions
@@ -470,6 +480,9 @@ spec:
             spec:
               description: ServiceInstanceSpec defines the desired state of ServiceInstance
               properties:
+                btpAccessCredentialsSecret:
+                  description: The name of the btp access credentials secret
+                  type: string
                 customTags:
                   description: List of custom tags describing the ServiceInstance, will be copied to `ServiceBinding` secret in the key called `tags`.
                   items:
@@ -611,6 +624,9 @@ spec:
                   type: string
                 ready:
                   description: Indicates whether instance is ready for usage
+                  type: string
+                subaccountID:
+                  description: The subaccount id of the service instance
                   type: string
                 tags:
                   description: Tags describing the ServiceInstance as provided in service catalog, will be copied to `ServiceBinding` secret in the key called `tags`.
